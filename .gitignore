@@ -20,3 +20,10 @@ Thumbs.db
 
 # Protobuf
 *.descriptor
+
+# Terraform
+*.tfvars
+*.tfstate
+*.tfstate.backup
+*.terraform.lock.hcl
+.terraform/

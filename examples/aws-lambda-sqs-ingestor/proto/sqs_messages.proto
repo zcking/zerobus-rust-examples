@@ -1,0 +1,25 @@
+syntax = "proto2";
+
+package sqs_messages;
+
+message table_sqs_messages {
+	optional string message_id = 1;
+	optional string receipt_handle = 2;
+	optional string body = 3;
+	optional string md5_of_body = 4;
+	optional string md5_of_message_attributes = 5;
+	map<string, string> attributes = 6;
+		message MessageAttributes {
+			optional string string_value = 1;
+			optional bytes binary_value = 2;
+			repeated string string_list_values = 3;
+			repeated bytes binary_list_values = 4;
+			optional string data_type = 5;
+		}
+
+	map<string, MessageAttributes> message_attributes = 7;
+	optional string queue_arn = 8;
+	optional string aws_region = 9;
+	optional int64 ingested_at = 10;
+	optional int32 ingested_date = 11;
+}

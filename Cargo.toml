@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "examples/hello-world",
+    "examples/aws-lambda-sqs-ingestor",
 ]
 resolver = "2"
 

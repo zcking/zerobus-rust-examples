@@ -51,29 +51,43 @@ export $(grep -v '^#' .env | grep -v '^$' | xargs)
    GRANT MODIFY, SELECT ON TABLE <catalog.schema.table> TO `<service-principal-uuid>`;
    ```
 
-### 3. Generate Protocol Buffer schemas
+### 3. Install zerobus-generate tool
 
-To generate Protocol Buffer schemas from your Unity Catalog table, you'll use the `generate_files` tool from the Zerobus Rust SDK repository:
-
-#### Clone the Zerobus Rust SDK repository
+The `zerobus-generate` tool is used to generate Protocol Buffer schemas from Unity Catalog tables. Install it globally:
 
 ```bash
-# Clone to a temporary directory (you only need this for the tools)
-cd ..
+# Clone the Zerobus Rust SDK repository
 git clone https://github.com/databricks/zerobus-sdk-rs.git
 cd zerobus-sdk-rs/tools/generate_files
+
+# Build the tool
+cargo build --release
+
+# Copy to your cargo bin directory (makes it available globally)
+cp target/release/tools ~/.cargo/bin/zerobus-generate
+
+# Verify installation
+zerobus-generate --help
 ```
 
-#### Generate the schema files
+### 4. Generate Protocol Buffer schemas
+
+Generate Protocol Buffer schemas from your Unity Catalog table using the `zerobus-generate` command:
 
 ```bash
+# Set environment variables (or export from .env file)
+export DATABRICKS_HOST="https://myworkspace.cloud.databricks.com"
+export DATABRICKS_CLIENT_ID="your-client-id"
+export DATABRICKS_CLIENT_SECRET="your-client-secret"
+export TABLE_NAME="main.default.zerobus_hello_world"
+
 # Generate .proto file, Rust code, and descriptor from the Unity Catalog table
-cargo run -- \
+zerobus-generate \
   --uc-endpoint $DATABRICKS_HOST \
   --client-id $DATABRICKS_CLIENT_ID \
   --client-secret $DATABRICKS_CLIENT_SECRET \
   --table $TABLE_NAME \
-  --output-dir "../zerobus-rust-examples/examples/hello-world/proto"
+  --output-dir examples/hello-world/proto
 ```
 
 This will generate three files in the proto directory:
@@ -81,13 +95,14 @@ This will generate three files in the proto directory:
 - `<table_name>.rs` - Rust code generated from the schema
 - `<table_name>.descriptor` - Binary descriptor file for runtime use
 
-**Note:** The proto directory structure is already set up in the examples. The `generate_files` tool will create all necessary artifacts that match your Unity Catalog table schema. I currently don't commit the `*.descriptor` files to Git because they are binary files.
+**Note:** The proto directory structure is already set up in the examples. The `zerobus-generate` tool will create all necessary artifacts that match your Unity Catalog table schema. The `*.descriptor` files are not committed to Git because they are binary files.
 
 ## Examples
 
 | Example | Description |
 |---------|-------------|
 | [Hello World](examples/hello-world/README.md) | Basic example demonstrating the fundamental workflow of the Zerobus SDK, including SDK initialization, stream creation, message encoding, record ingestion, and graceful shutdown. |
+| [AWS Lambda SQS Ingestor](examples/aws-lambda-sqs-ingestor/README.md) | AWS Lambda function that processes SQS messages and ingests them into Unity Catalog tables via Zerobus. Includes Terraform infrastructure for deployment with SQS queue, Dead Letter Queue, and Lambda function configured for partial batch response. |
 
 ## Project Structure
 
@@ -97,12 +112,24 @@ zerobus-rust-examples/
 ├── README.md               # This file
 ├── .env.example            # Example environment configuration
 └── examples/
-    └── hello-world/        # Basic hello world example
+    ├── hello-world/        # Basic hello world example
+    │   ├── Cargo.toml
+    │   ├── README.md
+    │   ├── proto/          # Protocol Buffer definitions
+    │   └── src/
+    │       └── main.rs
+    └── aws-lambda-sqs-ingestor/  # AWS Lambda SQS ingestor
         ├── Cargo.toml
         ├── README.md
+        ├── build.sh        # Build script for Lambda
         ├── proto/          # Protocol Buffer definitions
-        └── src/
-            └── main.rs
+        ├── src/
+        │   └── main.rs
+        └── terraform/      # Terraform infrastructure
+            ├── main.tf
+            ├── variables.tf
+            ├── outputs.tf
+            └── README.md
 ```
 
 ## Key Concepts
@@ -133,7 +160,7 @@ These credentials are used to obtain and refresh access tokens as needed. The SD
 
 The Zerobus service uses Protocol Buffers for efficient data serialization. Here's the workflow:
 
-1. **Generate Schema**: Use the `generate_files` tool from [zerobus-sdk-rs](https://github.com/databricks/zerobus-sdk-rs) to automatically generate Protocol Buffer definitions from your Unity Catalog table schema
+1. **Generate Schema**: Use the `zerobus-generate` tool (installed globally) to automatically generate Protocol Buffer definitions from your Unity Catalog table schema
 2. **Include Generated Code**: The tool creates three files:
    - `.proto` - Protocol Buffer schema definition
    - `.rs` - Rust code with message structs

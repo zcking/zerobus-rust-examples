@@ -1,0 +1,23 @@
+[package]
+name = "aws-lambda-sqs-ingestor"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+databricks-zerobus-ingest-sdk.workspace = true
+tokio.workspace = true
+prost.workspace = true
+prost-types.workspace = true
+anyhow.workspace = true
+lambda_runtime = "0.13.0"
+aws_lambda_events = { version = "0.15.1", default-features = false, features = ["sqs"] }
+aws-sdk-sqs = { version = "1.48.0", features = ["rustls"] }
+rustls = { version = "0.23.35", features = ["aws-lc-rs"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+base64 = "0.22"
+openssl = { version = "0.10.74", features = ["vendored"] }
