@@ -1,0 +1,21 @@
+[package]
+name = "aws-generic-ingestor"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+databricks-zerobus-ingest-sdk.workspace = true
+tokio.workspace = true
+prost.workspace = true
+prost-types.workspace = true
+anyhow.workspace = true
+lambda_runtime = "0.13.0"
+rustls = { version = "0.23.35", features = ["aws-lc-rs"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+openssl = { version = "0.10.74", features = ["vendored"] }
+

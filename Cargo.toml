@@ -2,6 +2,7 @@
 members = [
     "examples/hello-world",
     "examples/aws-lambda-sqs-ingestor",
+    "examples/aws-generic-ingestor",
 ]
 resolver = "2"
 
