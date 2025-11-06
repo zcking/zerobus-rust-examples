@@ -1,0 +1,12 @@
+syntax = "proto2";
+
+package aws_raw_events;
+
+message table_aws_raw_events {
+	optional string request_id = 1;
+	optional string payload = 2;
+	optional string context = 3;
+	optional int64 deadline = 4;
+	optional int64 ingested_at = 5;
+	optional int32 ingested_date = 6;
+}
