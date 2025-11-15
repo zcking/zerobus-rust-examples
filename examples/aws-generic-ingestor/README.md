@@ -15,14 +15,16 @@ Unlike the SQS-specific ingestor, this function is designed to work with any Lam
 ## Prerequisites
 
 - Rust 1.70 or later
-- [cargo-lambda](https://github.com/cargo-lambda/cargo-lambda) (for building Lambda functions)
+- [buf](https://buf.build) CLI tool: `brew install bufbuild/buf/buf`
+- `zerobus-generate` tool (see [root README](../../README.md) for installation)
+- [cargo-lambda](https://github.com/cargo-lambda/cargo-lambda): `brew install cargo-lambda`
 - Terraform >= 1.0
 - AWS CLI configured with appropriate credentials
-- A Databricks workspace with Zerobus enabled
-- Service principal with OAuth credentials
-- A Unity Catalog table configured for Zerobus ingestion
+- Databricks workspace with Zerobus enabled, service principal credentials, and Unity Catalog table
 
 ## Setup
+
+See the [root README](../../README.md) for initial workspace setup (service principal creation, environment variables, etc.).
 
 ### 1. Create Unity Catalog Table
 
@@ -58,54 +60,36 @@ GRANT USE SCHEMA ON SCHEMA <catalog.schema> TO `<service-principal-uuid>`;
 GRANT MODIFY, SELECT ON TABLE <catalog.schema.aws_raw_events> TO `<service-principal-uuid>`;
 ```
 
-### 2. Generate Protocol Buffer Schema
-
-Generate the Protocol Buffer files from your Unity Catalog table using the `zerobus-generate` tool:
+### 2. Generate and Compile Protocol Buffers
 
 ```bash
-# Set environment variables
-export DATABRICKS_HOST="https://myworkspace.cloud.databricks.com"
-export DATABRICKS_CLIENT_ID="your-client-id"
-export DATABRICKS_CLIENT_SECRET="your-client-secret"
-export TABLE_NAME="zach_king.zerobus.aws_raw_events"
+cd examples/aws-generic-ingestor
 
-# Generate proto files
+# Generate .proto file from Unity Catalog table
+make proto-generate
+
+# Compile .proto to Rust bindings and descriptors
+make proto-compile
+
+# Or run both steps together:
 make proto
 ```
 
-**Note:** Internally this uses the `zerobus-generate` command. This is just the `tools/generate_files` from the Zerobus Rust SDK, but I like to compile it and add the executable to my `$PATH` for convenience. If you haven't set up `zerobus-generate` yet, see the [main README](../../README.md) for those instructions.
+This creates:
+- `proto/aws_raw_events.proto` - Source schema (committed to git)
+- `gen/rust/aws_raw_events.rs` - Rust message structs (generated)
+- `gen/descriptors/aws_raw_events.descriptor` - Runtime descriptor (generated)
 
-This generates three files in the `proto/` directory:
-- `aws_raw_events.proto` - Protocol Buffer schema definition
-- `aws_raw_events.rs` - Rust code generated from the schema
-- `aws_raw_events.descriptor` - Binary descriptor file (required at runtime)
+### 3. Build and Package
 
-**Note:** The `.descriptor` file is not committed to git but is required for the Lambda function to run.
-
-### 3. Install cargo-lambda
-
-Install the cargo-lambda tool for building Lambda functions:
+Build the Lambda function (automatically compiles protos first):
 
 ```bash
-brew install cargo-lambda/tap/cargo-lambda
-```
-
-## Build and Package
-
-### Build
-
-Build the Lambda function:
-
-```bash
-# From the workspace root
-cd examples/aws-generic-ingestor
+# Development build
 make build
-```
 
-Or manually:
-
-```bash
-cargo lambda build --output-format zip --arm64 --release
+# Production build
+make build ARGS='--arm64 --release'
 ```
 
 This prepares a `../../target/lambda/aws-generic-ingestor/bootstrap.zip` file that is ready for deployment.
@@ -125,6 +109,19 @@ make invoke ARGS='--data-example s3-event'
 
 # Test with custom JSON from file
 make invoke ARGS='--data-file path/to/event.json'
+```
+
+### Verify Data
+
+Query your Unity Catalog table:
+
+```sql
+SELECT
+  parse_json(payload) as parsed_payload,
+  *
+FROM aws_raw_events
+ORDER BY ingested_at DESC
+LIMIT 10;
 ```
 
 ## Deployment
@@ -196,19 +193,6 @@ Monitor CloudWatch logs:
 ```bash
 LOG_GROUP=$(cd terraform && terraform output -raw cloudwatch_log_group_name)
 aws logs tail "$LOG_GROUP" --follow
-```
-
-### Verify Data
-
-Query your Unity Catalog table:
-
-```sql
-SELECT
-  parse_json(payload) as parsed_payload,
-  *
-FROM aws_raw_events
-ORDER BY ingested_at DESC
-LIMIT 10;
 ```
 
 ## Architecture

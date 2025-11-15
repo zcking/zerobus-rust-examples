@@ -33,11 +33,12 @@ LAMBDA_BUILD_DIR = ../../target/lambda/$(LAMBDA_PACKAGE_NAME)
 LAMBDA_ZIP_FILE = $(LAMBDA_BUILD_DIR)/bootstrap.zip
 TERRAFORM_DIR = terraform
 PROTO_DIR = proto
+GEN_DIR = gen
 
 # Build Lambda function
 .PHONY: build
 build: ARGS = --arm64
-build:
+build: proto-compile
 	@echo "Building Lambda function..."
 	@echo "Add ARGS='--arm64 --release' to compile a release build"
 	@if ! command -v cargo-lambda &> /dev/null; then \
@@ -54,11 +55,17 @@ build:
 clean:
 	@echo "Cleaning build artifacts..."
 	cargo clean
+	@echo "Cleaning generated code..."
+	rm -rf $(GEN_DIR)
 	@echo "Clean complete!"
 
-# Generate Protocol Buffer files from Unity Catalog table
+# Full proto workflow: generate .proto from UC, then compile with buf
 .PHONY: proto
-proto:
+proto: proto-generate proto-compile
+
+# Step 1: Generate .proto from Unity Catalog table using zerobus-generate
+.PHONY: proto-generate
+proto-generate:
 	@echo "Generating Protocol Buffer files..."
 	@if ! command -v zerobus-generate &> /dev/null; then \
 		echo "Error: zerobus-generate is not installed."; \
@@ -82,7 +89,35 @@ proto:
 		--client-secret $$DATABRICKS_CLIENT_SECRET \
 		--table $$TABLE_NAME \
 		--output-dir $(PROTO_DIR)
+	@echo "Cleaning up old generated .rs and .descriptor files..."
+	@rm -f $(PROTO_DIR)/*.rs $(PROTO_DIR)/*.descriptor
 	@echo "Proto files generated in $(PROTO_DIR)/"
+	@echo "Note: Old .rs and .descriptor files removed. Run 'make proto-compile' to regenerate with buf."
+
+# Step 2: Compile .proto to Rust bindings and descriptor files using buf
+.PHONY: proto-compile
+proto-compile:
+	@echo "Compiling proto files with buf..."
+	@if ! command -v buf &> /dev/null; then \
+		echo "Error: buf is not installed."; \
+		echo "Install it with:"; \
+		echo "  macOS: brew install bufbuild/buf/buf"; \
+		echo "  Linux: https://buf.build/docs/installation"; \
+		exit 1; \
+	fi
+	@echo "Generating Rust bindings..."
+	buf generate $(PROTO_DIR)/
+	@echo "Generating descriptor files..."
+	@mkdir -p $(GEN_DIR)/descriptors
+	@for proto_file in $(PROTO_DIR)/*.proto; do \
+		if [ -f "$$proto_file" ]; then \
+			base_name=$$(basename "$$proto_file" .proto); \
+			buf build "$$proto_file" -o "$(GEN_DIR)/descriptors/$${base_name}.descriptor" --as-file-descriptor-set; \
+		fi; \
+	done
+	@echo "Generated code in $(GEN_DIR)/"
+	@echo "  - Rust bindings: $(GEN_DIR)/rust/"
+	@echo "  - Descriptors: $(GEN_DIR)/descriptors/"
 
 # Terraform commands
 .PHONY: terraform-init
@@ -180,6 +215,12 @@ deps-check:
 		MISSING=1; \
 	else \
 		echo "✓ cargo-lambda found"; \
+	fi; \
+	if ! command -v buf &> /dev/null; then \
+		echo "✗ buf not found (install with: brew install bufbuild/buf/buf)"; \
+		MISSING=1; \
+	else \
+		echo "✓ buf found"; \
 	fi; \
 	if ! command -v zerobus-generate &> /dev/null; then \
 		echo "✗ zerobus-generate not found (see README.md for installation)"; \

@@ -6,6 +6,7 @@ use aws_lambda_events::{
 use base64::{engine::general_purpose, Engine as _};
 use databricks_zerobus_ingest_sdk::{StreamConfigurationOptions, TableProperties, ZerobusSdk, ZerobusStream};
 use lambda_runtime::{run, service_fn, Error, LambdaEvent};
+use prost::bytes::Bytes;
 use prost::Message;
 use prost_types::DescriptorProto;
 use std::sync::OnceLock;
@@ -13,7 +14,7 @@ use tracing::{error, info};
 
 // Module for generated protobuf code
 pub mod sqs_messages {
-    include!("../proto/sqs_messages.rs");
+    include!("../gen/rust/sqs_messages.rs");
 }
 use crate::sqs_messages::TableSqsMessages;
 
@@ -36,7 +37,7 @@ fn init_sdk() -> Result<&'static ZerobusSdk> {
 
 /// Load the protobuf descriptor from the embedded descriptor file
 fn load_descriptor_proto(file_name: &str, message_name: &str) -> DescriptorProto {
-    const DESCRIPTOR_BYTES: &[u8] = include_bytes!("../proto/sqs_messages.descriptor");
+    const DESCRIPTOR_BYTES: &[u8] = include_bytes!("../gen/descriptors/sqs_messages.descriptor");
 
     let file_descriptor_set = prost_types::FileDescriptorSet::decode(DESCRIPTOR_BYTES)
         .expect("Failed to decode descriptor file");
@@ -66,15 +67,15 @@ fn convert_message_attributes(
             let b64_str = format!("{:?}", bv);
             // Remove quotes if Debug adds them
             let b64_str = b64_str.trim_matches('"');
-            general_purpose::STANDARD.decode(b64_str).unwrap_or_default()
+            Bytes::from(general_purpose::STANDARD.decode(b64_str).unwrap_or_default())
         });
-        
-        let binary_list_values: Vec<Vec<u8>> = attr.binary_list_values
+
+        let binary_list_values: Vec<Bytes> = attr.binary_list_values
             .iter()
             .map(|bv| {
                 let b64_str = format!("{:?}", bv);
                 let b64_str = b64_str.trim_matches('"');
-                general_purpose::STANDARD.decode(b64_str).unwrap_or_default()
+                Bytes::from(general_purpose::STANDARD.decode(b64_str).unwrap_or_default())
             })
             .collect();
 

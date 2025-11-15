@@ -3,12 +3,12 @@ use prost_types::DescriptorProto;
 
 // Module for generated protobuf code
 pub mod aws_raw_events {
-    include!("../proto/aws_raw_events.rs");
+    include!("../gen/rust/aws_raw_events.rs");
 }
 
 /// Load the protobuf descriptor from the embedded descriptor file
 pub fn load_descriptor_proto(file_name: &str, message_name: &str) -> DescriptorProto {
-    const DESCRIPTOR_BYTES: &[u8] = include_bytes!("../proto/aws_raw_events.descriptor");
+    const DESCRIPTOR_BYTES: &[u8] = include_bytes!("../gen/descriptors/aws_raw_events.descriptor");
 
     let file_descriptor_set = prost_types::FileDescriptorSet::decode(DESCRIPTOR_BYTES)
         .expect("Failed to decode descriptor file");

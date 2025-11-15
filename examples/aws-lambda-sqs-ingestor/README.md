@@ -14,14 +14,16 @@ This example demonstrates how to:
 ## Prerequisites
 
 - Rust 1.70 or later
-- [cargo-lambda](https://github.com/cargo-lambda/cargo-lambda) (for building Lambda functions)
+- [buf](https://buf.build) CLI tool: `brew install bufbuild/buf/buf`
+- `zerobus-generate` tool (see [root README](../../README.md) for installation)
+- [cargo-lambda](https://github.com/cargo-lambda/cargo-lambda): `brew install cargo-lambda`
 - Terraform >= 1.0
 - AWS CLI configured with appropriate credentials
-- A Databricks workspace with Zerobus enabled
-- Service principal with OAuth credentials
-- A Unity Catalog table configured for Zerobus ingestion
+- Databricks workspace with Zerobus enabled, service principal credentials, and Unity Catalog table
 
 ## Setup
+
+See the [root README](../../README.md) for initial workspace setup (service principal creation, environment variables, etc.).
 
 ### 1. Create Unity Catalog Table
 
@@ -68,54 +70,36 @@ GRANT USE SCHEMA ON SCHEMA <catalog.schema> TO `<service-principal-uuid>`;
 GRANT MODIFY, SELECT ON TABLE <catalog.schema.table> TO `<service-principal-uuid>`;
 ```
 
-### 2. Generate Protocol Buffer Schema
-
-Generate the Protocol Buffer files from your Unity Catalog table using the `zerobus-generate` tool:
+### 2. Generate and Compile Protocol Buffers
 
 ```bash
-# Set environment variables
-export DATABRICKS_HOST="https://myworkspace.cloud.databricks.com"
-export DATABRICKS_CLIENT_ID="your-client-id"
-export DATABRICKS_CLIENT_SECRET="your-client-secret"
-export TABLE_NAME="zach_king.zerobus.sqs_messages"
+cd examples/aws-lambda-sqs-ingestor
 
-# Generate proto files
+# Generate .proto file from Unity Catalog table
+make proto-generate
+
+# Compile .proto to Rust bindings and descriptors
+make proto-compile
+
+# Or run both steps together:
 make proto
 ```
 
-**Note:** Internally this uses the `zerobus-generate` command. This is just the `tools/generate_files` from the Zerobus Rust SDK, but I like to compile it and add the executable to my `$PATH` for convenience. If you haven't set up `zerobus-generate` yet, see the [main README](../../README.md) for those instructions.
+This creates:
+- `proto/sqs_messages.proto` - Source schema (committed to git)
+- `gen/rust/sqs_messages.rs` - Rust message structs (generated)
+- `gen/descriptors/sqs_messages.descriptor` - Runtime descriptor (generated)
 
-This generates three files in the `proto/` directory:
-- `sqs_messages.proto` - Protocol Buffer schema definition
-- `sqs_messages.rs` - Rust code generated from the schema
-- `sqs_messages.descriptor` - Binary descriptor file (required at runtime)
+### 3. Build and Package
 
-**Note:** The `.descriptor` file is not committed to git but is required for the Lambda function to run.
-
-### 3. Install cargo-lambda
-
-Install the cargo-lambda tool for building Lambda functions:
+Build the Lambda function (automatically compiles protos first):
 
 ```bash
-brew install cargo-lambda/tap/cargo-lambda
-```
-
-## Build and Package
-
-### Build
-
-Build the Lambda function:
-
-```bash
-# From the workspace root
-cd examples/aws-lambda-sqs-ingestor
+# Development build
 make build
-```
 
-Or manually:
-
-```bash
-cargo lambda build --output-format zip --arm64 --release
+# Production build
+make build ARGS='--arm64 --release'
 ```
 
 This prepares a `../../target/lambda/aws-lambda-sqs-ingestor/bootstrap.zip` file that is ready for deployment.
