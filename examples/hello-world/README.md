@@ -18,15 +18,15 @@ This example walks through the complete lifecycle of a Zerobus ingestion session
 ## Prerequisites
 
 - Rust 1.70 or later
-- A Databricks workspace with Zerobus enabled (contact your Databricks account representative if needed)
-- Service principal with OAuth credentials (client ID and client secret)
-- A Unity Catalog table to ingest data into
+- [buf](https://buf.build) CLI tool: `brew install bufbuild/buf/buf`
+- `zerobus-generate` tool (see [root README](../../README.md) for installation)
+- Databricks workspace with Zerobus enabled, service principal credentials, and Unity Catalog table
 
-## Setup
+## Quick Start
 
-### 1. Create or Identify Your Unity Catalog Table
+See the [root README](../../README.md) for initial workspace setup (service principal creation, environment variables, etc.).
 
-First, create or identify the target table in Unity Catalog. For example:
+### 1. Create Your Unity Catalog Table
 
 ```sql
 CREATE TABLE main.default.zerobus_hello_world (
@@ -35,41 +35,33 @@ CREATE TABLE main.default.zerobus_hello_world (
 ) USING DELTA;
 ```
 
-### 2. Create a Service Principal and Grant Permissions
+Grant permissions to your service principal (see root README for details).
 
-1. In your Databricks workspace, go to **Settings** > **Identity and Access**
-2. Create a new service principal
-3. Generate and save the client ID and client secret (save the secret securely - it's shown only once)
-4. Copy the Application ID (UUID)
-5. Grant the required permissions:
-
-```sql
--- Replace <catalog>, <schema>, <table> with your actual names
--- Replace <service-principal-uuid> with your service principal's Application ID
-GRANT USE CATALOG ON CATALOG main TO `<service-principal-uuid>`;
-GRANT USE SCHEMA ON SCHEMA main.default TO `<service-principal-uuid>`;
-GRANT MODIFY, SELECT ON TABLE main.default.zerobus_hello_world TO `<service-principal-uuid>`;
-```
-
-### 3. Configure Environment Variables
-
-From the repository root, copy the example environment file:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` with your specific configuration.
-
-### 4. Generate Protocol Buffer Schema
-
-See the root [README](../../README.md) for instructions on generating the required protobuf artifacts for examples.
-
-### 5. Run the Example
+### 2. Generate and Compile Protocol Buffers
 
 ```bash
 cd examples/hello-world
-cargo run
+
+# Generate .proto file from Unity Catalog table
+make proto-generate
+
+# Compile .proto to Rust bindings and descriptors
+make proto-compile
+
+# Or run both steps together:
+make proto
+```
+
+This creates:
+- `proto/zerobus_hello_world.proto` - Source schema (committed to git)
+- `gen/rust/zerobus_hello_world.rs` - Rust message structs (generated)
+- `gen/descriptors/zerobus_hello_world.descriptor` - Runtime descriptor (generated)
+
+### 3. Build and Run
+
+```bash
+make build
+make run
 ```
 
 Expected output:

@@ -1,0 +1,9 @@
+version: v2
+managed:
+  enabled: false  # Start simple, can enable later for package management
+plugins:
+  # Rust code generation with prost
+  - remote: buf.build/community/neoeinstein-prost:v0.4.0
+    out: gen/rust
+    opt:
+      - bytes=.

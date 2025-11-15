@@ -14,7 +14,7 @@ use prost_types::DescriptorProto;
 // }
 
 pub mod hello_world {
-    include!("../proto/zerobus_hello_world.rs");
+    include!("../gen/rust/zerobus_hello_world.rs");
 } // Module name is arbitrary. Change to match your module name.
 use crate::hello_world::TableZerobusHelloWorld;
 
@@ -121,7 +121,7 @@ fn load_descriptor_proto(
     message_name: &str
 ) -> DescriptorProto {
     // Embed the descriptor file at compile time
-    const DESCRIPTOR_BYTES: &[u8] = include_bytes!("../proto/zerobus_hello_world.descriptor");
+    const DESCRIPTOR_BYTES: &[u8] = include_bytes!("../gen/descriptors/zerobus_hello_world.descriptor");
     
     let file_descriptor_set = prost_types::FileDescriptorSet::decode(
         DESCRIPTOR_BYTES

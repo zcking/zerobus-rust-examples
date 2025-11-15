@@ -22,7 +22,7 @@ For comprehensive documentation, see the official [Databricks Zerobus Ingest doc
 - A Databricks workspace with Zerobus enabled (contact your Databricks account representative if needed)
 - Service principal with OAuth credentials (client ID and client secret)
 - A Unity Catalog table configured for Zerobus ingestion
-- Protocol Buffer compiler (`protoc`) for generating schemas
+- [Buf](https://github.com/bufbuild/buf) or the Protocol Buffer compiler (`protoc`) for compiling protobuf bindings
 
 ## Setup
 

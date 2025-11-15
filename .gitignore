@@ -18,8 +18,9 @@ Thumbs.db
 .env
 .env.local
 
-# Protobuf
+# Protobuf - Generated code (buf generates these)
 *.descriptor
+gen/
 
 # Terraform
 *.tfvars
