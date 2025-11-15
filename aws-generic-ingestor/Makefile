@@ -1,7 +1,7 @@
 # Default target
 .PHONY: help
 help:
-	@echo "AWS Lambda SQS Ingestor - Available commands:"
+	@echo "AWS Lambda Generic Ingestor - Available commands:"
 	@echo ""
 	@echo "Build & Package:"
 	@echo "  make build           - Build Lambda function"
@@ -20,7 +20,8 @@ help:
 	@echo "  make terraform-destroy - Destroy Terraform resources"
 	@echo ""
 	@echo "Testing:"
-	@echo "  make test-send       - Send a test message to SQS queue"
+	@echo "  make serve           - Serve Lambda function locally"
+	@echo "  make invoke          - Invoke Lambda function locally with test event"
 	@echo "  make test-logs       - Tail CloudWatch logs"
 	@echo "  make test-query      - Query Unity Catalog table (requires Databricks CLI)"
 	@echo ""
@@ -28,7 +29,7 @@ help:
 	@echo "  make deps-check      - Check if required dependencies are installed"
 
 # Variables
-LAMBDA_PACKAGE_NAME = aws-lambda-sqs-ingestor
+LAMBDA_PACKAGE_NAME = aws-generic-ingestor
 LAMBDA_BUILD_DIR = ../../target/lambda/$(LAMBDA_PACKAGE_NAME)
 LAMBDA_ZIP_FILE = $(LAMBDA_BUILD_DIR)/bootstrap.zip
 TERRAFORM_DIR = terraform
@@ -38,7 +39,7 @@ GEN_DIR = gen
 # Build Lambda function
 .PHONY: build
 build: ARGS = --arm64
-build: proto-compile
+build:
 	@echo "Building Lambda function..."
 	@echo "Add ARGS='--arm64 --release' to compile a release build"
 	@if ! command -v cargo-lambda &> /dev/null; then \
@@ -131,11 +132,11 @@ terraform-plan: terraform-init
 	cd $(TERRAFORM_DIR) && terraform plan
 
 .PHONY: terraform-apply
-terraform-apply: terraform-init package
+terraform-apply: terraform-init build
 	@echo "Applying Terraform configuration..."
 	@if [ ! -f $(LAMBDA_ZIP_FILE) ]; then \
 		echo "Error: Lambda zip file not found at $(LAMBDA_ZIP_FILE)"; \
-		echo "Run 'make package' first"; \
+		echo "Run 'make build' first"; \
 		exit 1; \
 	fi
 	cd $(TERRAFORM_DIR) && terraform apply
@@ -255,7 +256,7 @@ serve:
 	cargo lambda watch
 
 .PHONY: invoke
-invoke: ARGS = --data-example sqs-event
+invoke: ARGS = --data-example s3-event
 invoke:
 	@echo "Invoking Lambda function locally..."
-	cargo lambda invoke aws-lambda-sqs-ingestor $(ARGS)
+	cargo lambda invoke aws-generic-ingestor $(ARGS)

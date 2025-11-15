@@ -85,7 +85,7 @@ async fn main() -> Result<()> {
         .as_micros() as i64; // Convert to microseconds
     let hello_msg = TableZerobusHelloWorld {
         msg: Some("Hello, Zerobus!".to_string()),
-        timestamp: Some(now),
+        ingested_at: Some(now),
     };
 
     println!("\nSending message: {}", hello_msg.msg.as_ref().unwrap());

@@ -84,13 +84,13 @@ proto-compile:
 
 # Build the example (auto-generate proto if needed)
 .PHONY: build
-build: proto-compile
+build:
 	@echo "Building hello-world example..."
 	cargo build
 
 # Run the example
 .PHONY: run
-run: proto-compile
+run:
 	@echo "Running hello-world example..."
 	cargo run
 

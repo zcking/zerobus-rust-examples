@@ -29,10 +29,13 @@ See the [root README](../../README.md) for initial workspace setup (service prin
 ### 1. Create Your Unity Catalog Table
 
 ```sql
-CREATE TABLE main.default.zerobus_hello_world (
+CREATE OR REPLACE TABLE zerobus_hello_world (
     msg STRING,
-    timestamp BIGINT
-) USING DELTA;
+    ingested_at TIMESTAMP
+)
+TBLPROPERTIES (delta.enableRowTracking = false)
+COMMENT 'Hello Zerobus!'
+;
 ```
 
 Grant permissions to your service principal (see root README for details).
@@ -40,7 +43,7 @@ Grant permissions to your service principal (see root README for details).
 ### 2. Generate and Compile Protocol Buffers
 
 ```bash
-cd examples/hello-world
+cd hello-world
 
 # Generate .proto file from Unity Catalog table
 make proto-generate

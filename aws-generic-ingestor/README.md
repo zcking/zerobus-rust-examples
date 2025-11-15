@@ -63,7 +63,7 @@ GRANT MODIFY, SELECT ON TABLE <catalog.schema.aws_raw_events> TO `<service-princ
 ### 2. Generate and Compile Protocol Buffers
 
 ```bash
-cd examples/aws-generic-ingestor
+cd aws-generic-ingestor
 
 # Generate .proto file from Unity Catalog table
 make proto-generate

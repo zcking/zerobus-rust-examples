@@ -1,15 +1,15 @@
 [workspace]
 members = [
-    "examples/hello-world",
-    "examples/aws-lambda-sqs-ingestor",
-    "examples/aws-generic-ingestor",
+    "hello-world",
+    "aws-lambda-sqs-ingestor",
+    "aws-generic-ingestor",
 ]
 resolver = "2"
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-authors = ["Databricks"]
+authors = ["Zachary King <zach@makewithdata.tech>"]
 license = "Apache-2.0"
 
 [workspace.dependencies]
