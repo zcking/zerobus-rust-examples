@@ -73,7 +73,7 @@ GRANT MODIFY, SELECT ON TABLE <catalog.schema.table> TO `<service-principal-uuid
 ### 2. Generate and Compile Protocol Buffers
 
 ```bash
-cd examples/aws-lambda-sqs-ingestor
+cd aws-lambda-sqs-ingestor
 
 # Generate .proto file from Unity Catalog table
 make proto-generate

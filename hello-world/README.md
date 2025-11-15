@@ -40,7 +40,7 @@ Grant permissions to your service principal (see root README for details).
 ### 2. Generate and Compile Protocol Buffers
 
 ```bash
-cd examples/hello-world
+cd hello-world
 
 # Generate .proto file from Unity Catalog table
 make proto-generate
